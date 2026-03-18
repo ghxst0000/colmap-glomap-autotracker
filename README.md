@@ -11,13 +11,15 @@ Replicates [polyfjord's Windows workflow](https://gist.github.com/polyfjord/fc22
 
 For every video in `./videos/`:
 
-1. **FFmpeg** — extracts every frame as JPEG
-2. **COLMAP `feature_extractor`** — detects SIFT features (CPU mode)
-3. **COLMAP `sequential_matcher`** — matches overlapping frames (overlap=15)
-4. **GLOMAP `mapper`** — fast sparse 3D reconstruction
+1. **FFmpeg** — extracts frames as high-quality JPEG (`-qscale:v 2`)
+2. **COLMAP `feature_extractor`** — detects SIFT features (CPU, multi-threaded)
+3. **COLMAP `sequential_matcher`** — matches overlapping frames
+4. **GLOMAP `mapper`** — fast global sparse 3D reconstruction
 5. **COLMAP `model_converter`** — exports TXT format for Blender
 
 Output lands in `./scenes/<video_name>/sparse/`.
+
+Already-completed scenes (marked with a `.done` file) are skipped automatically. Partial or interrupted runs are cleaned up and retried from scratch.
 
 ---
 
@@ -63,6 +65,28 @@ docker compose build
            └── 0/           ← binary model (BIN + TXT)
    ```
 
+## Configuration
+
+Copy `.env.sample` to `.env` and adjust as needed:
+
+```bash
+cp .env.sample .env
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `EXTRACT_FPS` | `4` | Frames per second to extract (`0` = all frames at native fps) |
+| `SIFT_MAX_NUM_FEATURES` | `8192` | Max SIFT features per image |
+| `SIFT_MAX_IMAGE_SIZE` | `3200` | Max image dimension fed to SIFT (pixels) |
+| `SIFT_NUM_THREADS` | `4` | CPU threads for SIFT extraction and matching |
+| `SEQUENTIAL_OVERLAP` | `15` | Overlapping frames for sequential matching |
+
+Override any setting inline without editing `.env`:
+
+```bash
+docker compose run -e EXTRACT_FPS=2 -e SEQUENTIAL_OVERLAP=8 --rm autotracker
+```
+
 ---
 
 ## Import into Blender
@@ -77,7 +101,7 @@ Using the [Blender COLMAP importer](https://github.com/SBCV/Blender-Addon-Photog
 
 ## Re-running a video
 
-The script skips any scene folder that already exists. To re-process a video, delete its scene folder:
+The script skips any scene that already has a `.done` marker. To re-process a video, delete its scene folder:
 
 ```bash
 rm -rf "scenes/my_video"
@@ -88,12 +112,16 @@ docker compose run --rm autotracker
 
 ## Pipeline notes
 
-| Setting | Value | Reason |
+| Setting | Default | Reason |
 |---|---|---|
 | GPU | Disabled | No CUDA in Docker on Apple Silicon |
-| Sequential overlap | 15 frames | Good balance for video footage |
+| `EXTRACT_FPS` | `4` | Good balance of coverage vs. frame count |
+| Sequential overlap | `15` frames | Strong connections for video footage |
 | Frame quality | `-qscale:v 2` | High-quality JPEG (1=best, 31=worst) |
 | Camera model | Single camera | Correct for single-lens video |
+| `SIFT_NUM_THREADS` | `4` | Set to your available CPU cores in `.env` |
+
+> **Performance tip:** `SEQUENTIAL_OVERLAP` has the largest impact on matching time — it's O(frames × overlap) pairs. Reducing it from 15 to 8 roughly halves matching time with minimal quality loss on well-shot video.
 
 ---
 
