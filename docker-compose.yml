@@ -1,0 +1,15 @@
+services:
+  autotracker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    # Run as linux/amd64 on Apple Silicon (Rosetta emulation via Docker Desktop)
+    platform: linux/amd64
+    image: photogeometry-autotracker:latest
+    env_file: .env
+    volumes:
+      # Drop your input videos into ./videos/
+      - ./videos:/workspace/02 VIDEOS
+      # Reconstructed scenes appear in ./scenes/
+      - ./scenes:/workspace/04 SCENES
+    # Use: docker compose run --rm autotracker
