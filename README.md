@@ -70,8 +70,10 @@ docker compose build
 Copy `.env.sample` to `.env` and adjust as needed:
 
 ```bash
-cp .env.sample .env
+./setup.sh
 ```
+
+Or manually:
 
 | Variable | Default | Description |
 |---|---|---|
