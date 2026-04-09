@@ -1,9 +1,9 @@
 # Photogeometry Autotracker
 
-Automated photogrammetry pipeline on macOS Apple Silicon using Docker.  
+Automated photogrammetry pipeline on macOS Apple Silicon and Linux using Docker.
 Replicates [polyfjord's Windows workflow](https://gist.github.com/polyfjord/fc22f22770cd4dd365bb90db67a4f2dc) with native Linux tools.
 
-**Versions:** COLMAP 3.12.3 · GLOMAP 1.1.0 · FFmpeg (latest apt)
+**Versions:** COLMAP 4.0.3 · FFmpeg (latest apt)
 
 ---
 
@@ -14,7 +14,7 @@ For every video in `./videos/`:
 1. **FFmpeg** — extracts frames as high-quality JPEG (`-qscale:v 2`)
 2. **COLMAP `feature_extractor`** — detects SIFT features (CPU, multi-threaded)
 3. **COLMAP `sequential_matcher`** — matches overlapping frames
-4. **GLOMAP `mapper`** — fast global sparse 3D reconstruction
+4. **COLMAP `global_mapper`** — fast global sparse 3D reconstruction
 5. **COLMAP `model_converter`** — exports TXT format for Blender
 
 Output lands in `./scenes/<video_name>/sparse/`.
@@ -27,7 +27,13 @@ Already-completed scenes (marked with a `.done` file) are skipped automatically.
 
 ### Prerequisites
 
+#### Mac
+
 - [Docker Desktop for Mac](https://docs.docker.com/desktop/install/mac-install/) with Rosetta 2 enabled (Settings → General → "Use Rosetta for x86_64/amd64…")
+
+#### Linux
+
+- [Docker for Linux](https://docs.docker.com/engine/install)
 
 ### Build the Docker image
 
@@ -35,7 +41,7 @@ Already-completed scenes (marked with a `.done` file) are skipped automatically.
 docker compose build
 ```
 
-> ⏳ **First build takes ~20–40 minutes** — COLMAP and GLOMAP are compiled from source.  
+> ⏳ **First build takes ~20–40 minutes** — COLMAP are compiled from source.  
 > Subsequent runs use the cached image instantly.
 
 ---
@@ -131,4 +137,3 @@ docker compose run --rm autotracker
 
 - [polyfjord YouTube guide](https://www.youtube.com/watch?v=PhdEk_RxkGQ)
 - [COLMAP docs](https://colmap.github.io)
-- [GLOMAP repo](https://github.com/colmap/glomap)
