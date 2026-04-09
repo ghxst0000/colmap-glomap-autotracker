@@ -1,6 +1,6 @@
 # ============================================================
 # Photogeometry Autotracker
-# Ubuntu 22.04 with COLMAP 3.12.3 + GLOMAP 1.1.0 + FFmpeg
+# Ubuntu 24.04 with COLMAP 4.0.3 + FFmpeg
 # Runs on macOS Apple Silicon via linux/amd64 emulation
 # ============================================================
 
@@ -9,12 +9,10 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
-# ── Install CMake 3.28+ from Kitware (Ubuntu 22.04 ships 3.22, GLOMAP needs 3.28) ──
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates
-
 # ── System packages ──────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # OS packages
+    ca-certificates
     # Build tools
     git \
     ninja-build \
