@@ -4,20 +4,14 @@
 # Runs on macOS Apple Silicon via linux/amd64 emulation
 # ============================================================
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=UTC
 
 # ── Install CMake 3.28+ from Kitware (Ubuntu 22.04 ships 3.22, GLOMAP needs 3.28) ──
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates wget gpg && \
-    wget -qO - https://apt.kitware.com/keys/kitware-archive-latest.asc \
-        | gpg --dearmor -o /usr/share/keyrings/kitware-archive-keyring.gpg && \
-    echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' \
-        > /etc/apt/sources.list.d/kitware.list && \
-    apt-get update && apt-get install -y --no-install-recommends cmake && \
-    rm -rf /var/lib/apt/lists/*
+        ca-certificates
 
 # ── System packages ──────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -27,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     pkg-config \
     unzip \
+    cmake \
     # COLMAP dependencies
     libboost-program-options-dev \
     libboost-filesystem-dev \
@@ -46,13 +41,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libcgal-dev \
     libceres-dev \
     libgtest-dev \
+    libopenimageio-dev \
+    libopencv-dev \
+    openimageio-tools \
     # FFmpeg
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Build COLMAP 3.12.3 ──────────────────────────────────────
 WORKDIR /build
-RUN git clone --depth 1 --branch 3.12.3 \
+RUN git clone --depth 1 --branch 4.0.3 \
     https://github.com/colmap/colmap.git colmap-src
 
 WORKDIR /build/colmap-src
@@ -64,22 +62,6 @@ RUN mkdir build && cd build && \
         -DCUDA_ENABLED=OFF \
         -DGUI_ENABLED=OFF \
         -DTESTS_ENABLED=OFF \
-        .. && \
-    ninja -j2 && \
-    ninja install && \
-    ldconfig
-
-# ── Build GLOMAP 1.1.0 ───────────────────────────────────────
-WORKDIR /build
-RUN git clone --depth 1 --branch 1.1.0 \
-    https://github.com/colmap/glomap.git glomap-src
-
-WORKDIR /build/glomap-src
-# Limit to 2 parallel jobs to avoid OOM during C++ compilation
-RUN mkdir build && cd build && \
-    cmake -GNinja \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_INSTALL_PREFIX=/usr/local \
         .. && \
     ninja -j2 && \
     ninja install && \
