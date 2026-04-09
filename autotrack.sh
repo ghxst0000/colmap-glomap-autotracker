@@ -7,7 +7,7 @@
 #   1) FFmpeg  – extract frames at EXTRACT_FPS (default: 4 fps)
 #   2) COLMAP  – feature_extractor (CPU SIFT)
 #   3) COLMAP  – sequential_matcher (overlap=15)
-#   4) GLOMAP  – mapper (fast SfM)
+#   4) COLMAP  – global_mapper (fast SfM)
 #   5) COLMAP  – model_converter → TXT (Blender import)
 #
 # Override defaults via .env or:
@@ -31,9 +31,6 @@ if ! command -v ffmpeg &>/dev/null; then
 fi
 if ! command -v colmap &>/dev/null; then
     echo "[ERROR] colmap not found on PATH." >&2; exit 1
-fi
-if ! command -v glomap &>/dev/null; then
-    echo "[ERROR] glomap not found on PATH." >&2; exit 1
 fi
 
 mkdir -p "$SCENES_DIR"
@@ -114,9 +111,9 @@ for VIDEO in "${videos[@]}"; do
             --database_path "$SCENE/database.db" \
             --image_path "$IMG_DIR" \
             --ImageReader.single_camera 1 \
-            --SiftExtraction.use_gpu 0 \
-            --SiftExtraction.num_threads "${SIFT_NUM_THREADS}" \
-            --SiftExtraction.max_image_size "${SIFT_MAX_IMAGE_SIZE}" \
+            --FeatureExtraction.use_gpu 0 \
+            --FeatureExtraction.num_threads "${SIFT_NUM_THREADS}" \
+            --FeatureExtraction.max_image_size "${SIFT_MAX_IMAGE_SIZE}" \
             --SiftExtraction.max_num_features "${SIFT_MAX_NUM_FEATURES}"; then
         echo "✗ feature_extractor failed — skipping \"$NAME\"."
         rm -rf "$SCENE"; continue
@@ -126,16 +123,16 @@ for VIDEO in "${videos[@]}"; do
     echo "[3/5] COLMAP sequential_matcher …"
     if ! colmap sequential_matcher \
             --database_path "$SCENE/database.db" \
-            --SiftMatching.use_gpu 0 \
-            --SiftMatching.num_threads "${SIFT_NUM_THREADS}" \
+            --FeatureMatching.use_gpu 0 \
+            --FeatureMatching.num_threads "${SIFT_NUM_THREADS}" \
             --SequentialMatching.overlap "${SEQUENTIAL_OVERLAP}"; then
         echo "✗ sequential_matcher failed — skipping \"$NAME\"."
         rm -rf "$SCENE"; continue
     fi
 
-    # ── 4) GLOMAP sparse reconstruction ──────────────────────
-    echo "[4/5] GLOMAP mapper …"
-    if ! glomap mapper \
+    # ── 4) COLMAP global_mapper sparse reconstruction ──────────────────────
+    echo "[4/5] COLMAP global_mapper …"
+    if ! colmap global_mapper \
             --database_path "$SCENE/database.db" \
             --image_path "$IMG_DIR" \
             --output_path "$SPARSE_DIR"; then
